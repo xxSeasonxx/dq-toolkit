@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Test / coverage / lint caches
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Spark local artifacts
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Generated data
+data/
+*.parquet
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
