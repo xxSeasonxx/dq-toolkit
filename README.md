@@ -102,7 +102,7 @@ The per-group Gaussian beats the global z-score because customer spend is hetero
 - [x] `resolve` — blocking, comparison, scoring, connected-component clustering
 - [x] `eval` + `demo` — label & pairwise metrics, runnable end-to-end demo
 - [x] `sources.synthetic` — transactions + customers with planted ground truth
-- [ ] tests to 100% coverage + CI green across Python 3.10–3.12
+- [x] tests at 100% coverage + CI across Python 3.10–3.12
 
 ## License
 
