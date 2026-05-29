@@ -13,6 +13,7 @@ Both capabilities sit on one shared `core` foundation — typed config, structur
 
 - **Dependency inversion.** Ingestion hides behind a `DataSource` protocol; detection behind a `Detector` protocol. Swap synthetic data for a real warehouse, or add a detector, and callers don't change.
 - **Open/closed.** Detectors self-register; a new method is a new file, never an edit to a growing `if/elif`.
+- **Layered API.** A two-function facade (`detect_anomalies`, `resolve_entities`) handles the common case in one call, while the protocols, detectors, scorers, and pipelines underneath stay directly composable for full control.
 - **Typed boundaries.** `pydantic` config at the edges, frozen dataclasses for every result — invalid states are hard to represent.
 - **Spark efficiency, on purpose.** Broadcast joins for blocking, partition-aware grouped statistics, native column expressions over Python UDFs, no `.count()` in transformation loops, lazy evaluation kept lazy. Deliberate choices are commented where they matter (e.g. why a broadcast cross-join beats a global `Window`).
 - **Provably correct.** Synthetic data ships with ground-truth labels, so the toolkit reports real precision/recall/F1 — and the suite holds 100% coverage.
@@ -63,17 +64,24 @@ src/dqkit/
 ```python
 from pyspark.sql import SparkSession
 
-from dqkit.detect import GaussianDetector, get_detector
-from dqkit.sources import SyntheticTransactions
+from dqkit import detect_anomalies, resolve_entities
+from dqkit.sources import SyntheticCustomers, SyntheticTransactions
 
 spark = SparkSession.builder.getOrCreate()
-txns = SyntheticTransactions(n_customers=200, txns_per_customer=50).load(spark)
 
-# Same Detector interface, two strategies:
-report = get_detector("zscore").detect(txns, column="amount")               # global
-grouped = GaussianDetector(group_col="customer_id").detect(txns, "amount")  # per-customer
-print(f"{report.detector}: flagged {report.n_flagged} rows")
-report.flagged.orderBy("anomaly_score", ascending=False).show(5)
+# Anomaly detection — one call; choose the method by name:
+txns = SyntheticTransactions().load(spark)
+report = detect_anomalies(txns, "amount", method="gaussian", group_col="customer_id")
+print(f"flagged {report.n_flagged} rows")
+
+# Entity resolution — one call:
+customers = SyntheticCustomers().load(spark)
+result = resolve_entities(customers)
+print(f"{result.n_records} records -> {result.n_entities} entities")
+
+# Need finer control? These are a thin facade — drop down to the building
+# blocks (get_detector(...), GaussianDetector(...), ResolutionPipeline(...))
+# for full configurability.
 ```
 
 ```bash
